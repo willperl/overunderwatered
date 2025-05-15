@@ -35,4 +35,22 @@ layout: page
 		if (json.data && json.data[0] && json.data[0].confidences) {
 			const label = json.data[0].confidences[0].label;
 			const conf = json.data[0].confidences[0].confidence;
-			results.innerHTML = `<br/><img src="${base64Image}" width="300"><p
+			results.innerHTML = `<br/><img src="${base64Image}" width="300"><p>${label}</p><p>${conf}</p>`;
+		} else {
+			results.innerHTML = `<p>Unexpected response:</p><pre>${JSON.stringify(json, null, 2)}</pre>`;
+		}
+	}
+
+	document.getElementById("photo").addEventListener("input", async (event) => {
+		const file = event.target.files[0];
+		if (!file) return;
+
+		try {
+			const base64Image = await readImageAsDataURL(file);
+			await sendImageToAPI(base64Image);
+		} catch (err) {
+			console.error("Error reading or sending image:", err);
+			results.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+		}
+	});
+</script>

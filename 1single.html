@@ -3,28 +3,40 @@ title: 1. Single file
 layout: page
 ---
 
-<input id="photo" type="file">
+<input id="photo" type="file" />
 <div id="results"></div>
 
-<script type="module">
-	import { client } from "https://gradio.s3-us-west-2.amazonaws.com/5.0.0/gradio.js";
+<script>
+	const API_URL = "https://smittens-overorunderwatered.hf.space";
 
-	async function classifyImage(base64Image) {
-		const app = await client.connect("smittens/overorunderwatered");
+	async function readImageAndSend() {
+		const file = document.getElementById("photo").files[0];
+		const reader = new FileReader();
 
-		const result = await app.predict("/predict", [base64Image]);
-		console.log("Result:", result);
-		
-		document.getElementById("results").innerHTML = `
-			<img src="${base64Image}" width="300">
-			<p>${result.data[0].label}</p>
-			<p>${(result.data[0].confidence * 100).toFixed(2)}%</p>
-		`;
+		reader.onloadend = async () => {
+			const base64Image = reader.result;
+
+			const payload = {
+				data: [base64Image],
+				fn_index: 0  // This might vary. See note below.
+			};
+
+			const res = await fetch(`${API_URL}/queue/join`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const json = await res.json();
+			console.log("Response:", json);
+
+			document.getElementById("results").innerText = JSON.stringify(json, null, 2);
+		};
+
+		reader.readAsDataURL(file);
 	}
 
-	document.getElementById("photo").addEventListener("change", (e) => {
-		const reader = new FileReader();
-		reader.onload = () => classifyImage(reader.result);
-		reader.readAsDataURL(e.target.files[0]);
-	});
+	document.getElementById("photo").addEventListener("change", readImageAndSend);
 </script>

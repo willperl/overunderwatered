@@ -4,20 +4,17 @@ layout: page
 ---
 
 <script type="module">
-  import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
+  import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client@1.9.0/+esm";
 
   async function predictBase64(base64Image) {
     const app = await client("smittens/overorunderwatered");
-    
-    // Extract only the base64 part (strip the "data:image/jpeg;base64," prefix)
     const base64Only = base64Image.split(',')[1]; 
 
-    console.log('Input type:', typeof base64Only);
-    console.log('Input preview:', base64Only.slice(0,30));
-
     try {
-      const result = await app.predict([base64Only]);
-      console.log('Prediction result:', result);
+      const result = await app.predict({
+        data: [base64Only],
+        fn_index: 0
+      });
 
       const label = result.data[0].confidences[0].label;
       const conf = result.data[0].confidences[0].confidence;
@@ -32,8 +29,6 @@ layout: page
       document.getElementById("results").textContent = `Error: ${err.message || err}`;
     }
   }
-
-
 
   document.getElementById("photo").addEventListener("change", (e) => {
     const file = e.target.files[0];

@@ -8,7 +8,10 @@ layout: page
 
   async function predictBase64(base64Image) {
     const app = await client("smittens/overorunderwatered");
-    const result = await app.predict("/predict", [base64Image]);
+    const result = await app.predict({
+	  fn_index: 0,
+	  data: [base64Image]
+	});
 
     const label = result.data[0].confidences[0].label;
     const conf = result.data[0].confidences[0].confidence;

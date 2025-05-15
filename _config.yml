@@ -2,8 +2,8 @@ remote_theme: daviddarnes/alembic@main
 plugins:
 - jekyll-remote-theme
 
-title: Jeremy Howard
-description: Some basic examples of client interfaces to a computer vision API
+title: Will Perl
+description: Analyze if your unhappy plant is over or under watered with advanced computer vision
 
 author:
-  name: Jeremy Howard
+  name: Will Perl

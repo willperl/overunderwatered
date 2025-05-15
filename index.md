@@ -1,10 +1,10 @@
-Plant Water
+---
+title: Home
+layout: page
+---
 
-Linked above are some examples of vision classifiers using JavaScript from [fast.ai](https://course.fast.ai) staff and students. Also, check out these other examples from students, along with the [fast.ai forums](https://forums.fast.ai) username of each contributor:
+##### Analyze if your unhappy plant is over or under watered with advanced computer vision
 
-- [predict_image](https://github.com/nuvic/predict_image) h/t nuvic
-- [Dog vs Cat](https://edwardjross.github.io/gradio-image-demo/) h/t edwardjross 
-- [Food classifier](https://suvash.github.io/very-basic-gradio-api-app/) h/t suvash 
-- [webcam interface](https://misza222.github.io/hf_api_predict/) h/t misza222
-- [Get to know your pet](https://gettoknowyourpet.com/) h/t aabdalla
-- [pyscript app](https://matdmiller.github.io/fastai-huggingface-sample-web-app1/pyscript-classifier.html) h/t matdmiller
+The symptoms of over watering and under watering a plant are often identical to the human eye. But an AI Image Recognition Model can evaluate at a deeper level and recognize the symptoms that even a loving and experienced plant owner might not be able to see.
+
+Upload a photo of your drooping plant and the model will assess whether it appears to be over watered or under watered, along with its confidence in that evaluation.

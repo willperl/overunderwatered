@@ -11,9 +11,17 @@ layout: page
       headers: { "Content-Type": "application/json" }
     });
     const json = await response.json();
-    const label = json['data'][0]['confidences'][0]['label'];
+    const scores = json.data[0];  // e.g., { "Cat": 0.98, "Dog": 0.02 }
+	const entries = Object.entries(scores);  // [["Cat", 0.98], ["Dog", 0.02]]
+	entries.sort((a, b) => b[1] - a[1]);  // sort by confidence
+	const [label, conf] = entries[0];  // most confident label
     const div = document.createElement('div');
-    div.innerHTML = `<br/><img src="${reader.result}" width="300"> <p>${label}</p>`
+    div..innerHTML = `
+		  <br/><img src="${reader.result}" width="300">
+		  <p><strong>${label}</strong></p>
+		  <p>Confidence: ${(conf * 100).toFixed(2)}%</p>
+		`;
+
     document.body.append(div);
   }
   function read(file) {

@@ -3,46 +3,32 @@ title: 1. Single file
 layout: page
 ---
 
-<h2>Upload a photo</h2>
-<input id="photo" type="file" accept="image/*">
-<div id="results"></div>
-
 <script type="module">
-	import { client } from "https://gradio.s3-us-west-2.amazonaws.com/5.11.0/gradio.js";
+  import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
 
-	const app = await client("smittens/overorunderwatered"); // Your space
+  async function predictBase64(base64Image) {
+    const app = await client("smittens/overorunderwatered");
+    const result = await app.predict("/gradio_api/queue/join", [base64Image]);
 
-	const photoInput = document.getElementById("photo");
-	const resultsDiv = document.getElementById("results");
+    const label = result.data[0].confidences[0].label;
+    const conf = result.data[0].confidences[0].confidence;
 
-	photoInput.addEventListener("change", async () => {
-		const file = photoInput.files[0];
-		if (!file) return;
+    document.getElementById("results").innerHTML = `
+      <img src="${base64Image}" width="300" />
+      <p><strong>Prediction:</strong> ${label}</p>
+      <p><strong>Confidence:</strong> ${conf.toFixed(2)}</p>
+    `;
+  }
 
-		const reader = new FileReader();
-		reader.onload = async () => {
-			const base64Image = reader.result;
-
-			try {
-				const result = await app.predict("/gradio_api/queue/join", {
-					img: base64Image
-				});
-
-				// Adjust this to match your model's return structure
-				const label = result.data?.[0]?.label ?? "Unknown";
-				const conf = result.data?.[0]?.confidence ?? "N/A";
-
-				resultsDiv.innerHTML = `
-					<img src="${base64Image}" width="300"><br>
-					<b>Prediction:</b> ${label}<br>
-					<b>Confidence:</b> ${conf}
-				`;
-			} catch (e) {
-				console.error("Prediction error:", e);
-				resultsDiv.textContent = "Error: " + e.message;
-			}
-		};
-
-		reader.readAsDataURL(file);
-	});
+  document.getElementById("photo").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      predictBase64(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 </script>
+
+<input id="photo" type="file" />
+<div id="results"></div>

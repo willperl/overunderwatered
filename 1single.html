@@ -21,7 +21,7 @@ layout: page
 				fn_index: 0  // This might vary. See note below.
 			};
 
-			const res = await fetch(`${API_URL}/queue/join`, {
+			const res = await fetch(`${API_URL}/gradio_api/queue/join`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json"

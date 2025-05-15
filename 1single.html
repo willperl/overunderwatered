@@ -8,12 +8,8 @@ layout: page
 
   async function predictBase64(base64Image) {
   const app = await client("smittens/overorunderwatered");
-const base64Only = base64Image.split(',')[1];
-
-const result = await app.predict({
-  fn_index: 0,
-  data: [base64Only]
-});
+  
+  const result = await app.predict([base64Only]);
 
   const label = result.data[0].confidences[0].label;
   const conf = result.data[0].confidences[0].confidence;

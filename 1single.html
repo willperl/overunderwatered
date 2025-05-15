@@ -24,7 +24,7 @@ layout: page
 			const base64Image = reader.result;
 
 			try {
-				const result = await app.predict("/predict", {
+				const result = await app.predict("/gradio_api/queue/join", {
 					img: base64Image
 				});
 

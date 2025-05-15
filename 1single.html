@@ -11,7 +11,25 @@ layout: page
       method: "POST", body: JSON.stringify({ "data": [reader.result] }),
       headers: { "Content-Type": "application/json" }
     });
-    const json = await response.json();
+    //const json = await response.json();
+const text = await response.text(); // <-- not json yet
+console.log("Raw response:", text);
+
+let json;
+try {
+  json = JSON.parse(text);
+} catch (err) {
+  console.error("Failed to parse JSON:", err);
+  results.innerHTML = `<p>⚠️ Invalid JSON response from server</p>`;
+  return;
+}
+
+if (!json.data) {
+  console.error("json.data missing:", json);
+  results.innerHTML = `<p>⚠️ Unexpected API response format</p>`;
+  return;
+}
+    
     // console.log("json", json);
     //const label = json['data'][0]['confidences'][0]['label'];
     //const conf = json['data'][0]['confidences'][0]['confidence'];

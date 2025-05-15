@@ -12,8 +12,11 @@ layout: page
       headers: { "Content-Type": "application/json" }
     });
     const json = await response.json();
+    // console.log("json", json);
     const label = json['data'][0]['confidences'][0]['label'];
-    results.innerHTML = `<br/><img src="${reader.result}" width="300"> <p>${label}</p>`
+    const conf = json['data'][0]['confidences'][0]['confidence'];
+    // console.log("conf", conf);
+    results.innerHTML = `<br/><img src="${reader.result}" width="300"> <p>${label}</p> <p>${conf}<p>`
   }
   function read() {
     const reader = new FileReader();

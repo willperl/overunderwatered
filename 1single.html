@@ -7,21 +7,21 @@ layout: page
   import { client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
 
   async function predictBase64(base64Image) {
-    const app = await client("smittens/overorunderwatered");
-    const result = await app.predict({
-	  fn_index: 0,
-	  data: [base64Image]
-	});
+  const app = await client("smittens/overorunderwatered");
+  const result = await app.predict({
+    fn_index: 0,        // use your actual function index here (0 is default)
+    data: [base64Image] // array of inputs, base64Image must be a string
+  });
 
-    const label = result.data[0].confidences[0].label;
-    const conf = result.data[0].confidences[0].confidence;
+  const label = result.data[0].confidences[0].label;
+  const conf = result.data[0].confidences[0].confidence;
 
-    document.getElementById("results").innerHTML = `
-      <img src="${base64Image}" width="300" />
-      <p><strong>Prediction:</strong> ${label}</p>
-      <p><strong>Confidence:</strong> ${conf.toFixed(2)}</p>
-    `;
-  }
+  document.getElementById("results").innerHTML = `
+    <img src="${base64Image}" width="300" />
+    <p><strong>Prediction:</strong> ${label}</p>
+    <p><strong>Confidence:</strong> ${conf.toFixed(2)}</p>
+  `;
+}
 
   document.getElementById("photo").addEventListener("change", (e) => {
     const file = e.target.files[0];

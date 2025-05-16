@@ -37,16 +37,23 @@ async function callGradioAPI() {
 
 	// Step 2: Poll result after short delay
 	const resultResponse = await fetch(`https://smittens-overorunderwatered.hf.space/gradio_api/call/predict/${eventId}`);
-	const text = await resultResponse.text();
+	const rawText = await resultResponse.text();
 
-	console.log("Raw Response:", text);
+	console.log("Raw Response:", rawText);
 
-	try {
-		const parsed = JSON.parse(text);
-		console.log("Prediction result:", parsed);
-	} catch (e) {
-		console.error("Could not parse JSON:", e);
+	// Extract the line that starts with "data:"
+	const match = rawText.match(/^data:\s*(.*)$/m);
+	if (match && match[1]) {
+		try {
+			const parsed = JSON.parse(match[1]);
+			console.log("Parsed result:", parsed);
+		} catch (e) {
+			console.error("JSON parsing failed:", e);
+		}
+	} else {
+		console.error("Could not find data line in response.");
 	}
+
 }
 
 callGradioAPI();

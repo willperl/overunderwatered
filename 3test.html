@@ -4,9 +4,6 @@ layout: page
 ---
 
 <script>
-const fetch = require('node-fetch'); // Use `npm install node-fetch` if needed
-const readline = require('readline');
-
 async function callGradioAPI() {
 	const imagePayload = {
 		data: [
@@ -19,7 +16,7 @@ async function callGradioAPI() {
 		]
 	};
 
-	// Step 1: POST the request
+	// Step 1: Send the request
 	const response = await fetch("https://smittens-overorunderwatered.hf.space/gradio_api/call/predict", {
 		method: "POST",
 		headers: {
@@ -38,26 +35,19 @@ async function callGradioAPI() {
 
 	console.log("Event ID:", eventId);
 
-	// Step 2: Stream the prediction result
-	const eventResponse = await fetch(`https://smittens-overorunderwatered.hf.space/gradio_api/call/predict/${eventId}`);
+	// Step 2: Poll result after short delay
+	const resultResponse = await fetch(`https://smittens-overorunderwatered.hf.space/gradio_api/call/predict/${eventId}`);
+	const text = await resultResponse.text();
 
-	const rl = readline.createInterface({
-		input: eventResponse.body,
-		crlfDelay: Infinity
-	});
+	console.log("Raw Response:", text);
 
-	console.log("Prediction stream output:");
-
-	rl.on('line', (line) => {
-		try {
-			const parsed = JSON.parse(line);
-			console.log(parsed);
-		} catch (e) {
-			console.warn("Non-JSON line or stream continuation:", line);
-		}
-	});
+	try {
+		const parsed = JSON.parse(text);
+		console.log("Prediction result:", parsed);
+	} catch (e) {
+		console.error("Could not parse JSON:", e);
+	}
 }
 
-callGradioAPI().catch(console.error);
-
+callGradioAPI();
 </script>

@@ -13,61 +13,42 @@ layout: page
 
 	<script>
 	async function callGradioWithFile(file) {
-		// Convert file to base64
-		const base64 = await new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result.split(',')[1]);
-			reader.onerror = reject;
-			reader.readAsDataURL(file);
-		});
+	const blobURL = URL.createObjectURL(file);
 
-		const payload = {
-			data: [
-				{
-					name: file.name,
-					data: base64,
-					mime_type: file.type,
-					meta: { _type: "gradio.FileData" }
-				}
-			]
-		};
+	const payload = {
+		data: [
+			{
+				path: blobURL,
+				meta: { _type: "gradio.FileData" }
+			}
+		]
+	};
 
-		// Step 1: POST the image
-		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
-		const response = await fetch(predictURL, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload)
-		});
+	const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
+	const response = await fetch(predictURL, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	});
 
-		const result = await response.json();
-		const eventId = result.event_id;
+	const result = await response.json();
+	const eventId = result.event_id;
 
-		if (!eventId) {
-			throw new Error("No event ID returned from Gradio");
-		}
+	if (!eventId) throw new Error("No event ID returned");
 
-		// Step 2: Stream the result
-		const streamRes = await fetch(`${predictURL}/${eventId}`);
-		const rawText = await streamRes.text();
+	const streamRes = await fetch(`${predictURL}/${eventId}`);
+	const rawText = await streamRes.text();
 
-		console.log("📥 Raw response:\n" + rawText);
+	console.log("📥 Raw response:\n" + rawText);
 
-		// Step 3: Extract the JSON payload from the stream
-		const match = rawText.match(/^data:\s*(.*)$/m);
-		if (!match || !match[1]) {
-			throw new Error("Could not find 'data:' line in response");
-		}
+	const match = rawText.match(/^data:\s*(.*)$/m);
+	if (!match || !match[1]) throw new Error("No valid data in response");
 
-		try {
-			const parsed = JSON.parse(match[1]);
-			console.log("🎉 Parsed result:", parsed);
-			return parsed;
-		} catch (e) {
-			console.error("❌ JSON parse failed:", e.message);
-			throw new Error("Could not parse result JSON");
-		}
-	}
+	const parsed = JSON.parse(match[1]);
+	console.log("🎉 Parsed result:", parsed);
+	return parsed;
+}
+
 
 	document.getElementById("uploadForm").addEventListener("submit", async (e) => {
 		e.preventDefault();

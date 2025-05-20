@@ -3,24 +3,26 @@ title: 3. Tester
 layout: page
 ---
 
-	<input type="file" id="fileInput" required>
-<button onclick="handleUpload()">Upload & Classify</button>
+<input type="file" id="fileInput" required>
+<button onclick="handleUpload()">Upload + Classify</button>
 <pre id="output"></pre>
 
 <script>
-async function uploadFileToFileIO(file) {
+async function uploadToTmpfiles(file) {
 	const formData = new FormData();
 	formData.append("file", file);
 
-	const res = await fetch("https://file.io/?expires=1d", {
+	const res = await fetch("https://tmpfiles.org/api/v1/upload", {
 		method: "POST",
 		body: formData
 	});
 
 	const json = await res.json();
-	if (!json.success) throw new Error("Upload failed");
-	console.log("🌍 File URL:", json.link);
-	return json.link;
+	if (!json || !json.data || !json.data.url) {
+		throw new Error("Failed to upload to tmpfiles.org");
+	}
+	console.log("🌍 Uploaded file URL:", json.data.url);
+	return json.data.url;
 }
 
 async function callGradioWithURL(fileURL) {
@@ -59,18 +61,21 @@ async function callGradioWithURL(fileURL) {
 
 async function handleUpload() {
 	const file = document.getElementById("fileInput").files[0];
+	const output = document.getElementById("output");
+
 	if (!file) return;
 
-	document.getElementById("output").textContent = "Uploading...";
-	try {
-		const fileURL = await uploadFileToFileIO(file);
-		document.getElementById("output").textContent = "Classifying...";
+	output.textContent = "📤 Uploading file...";
 
-		const result = await callGradioWithURL(fileURL);
-		document.getElementById("output").textContent = JSON.stringify(result, null, 2);
+	try {
+		const url = await uploadToTmpfiles(file);
+		output.textContent = "🧠 Classifying...";
+
+		const result = await callGradioWithURL(url);
+		output.textContent = "✅ Result:\n" + JSON.stringify(result, null, 2);
 	} catch (err) {
 		console.error(err);
-		document.getElementById("output").textContent = "❌ Error: " + err.message;
+		output.textContent = "❌ Error: " + err.message;
 	}
 }
 </script>

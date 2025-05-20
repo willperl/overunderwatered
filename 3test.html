@@ -4,35 +4,22 @@ layout: page
 ---
 
 <input type="file" id="fileInput" required>
-<button onclick="handleUpload()">Upload + Classify</button>
+<button onclick="handleUpload()">Classify</button>
 <pre id="output"></pre>
 
 <script>
-async function uploadToTmpfiles(file) {
-	const formData = new FormData();
-	formData.append("file", file);
-
-	const res = await fetch("https://tmpfiles.org/api/v1/upload", {
-		method: "POST",
-		body: formData
+function fileToBase64(file) {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result);
+		reader.onerror = reject;
+		reader.readAsDataURL(file); // converts to base64 data URI
 	});
-
-	const json = await res.json();
-	if (!json || !json.data || !json.data.url) {
-		throw new Error("Failed to upload to tmpfiles.org");
-	}
-	console.log("🌍 Uploaded file URL:", json.data.url);
-	return json.data.url;
 }
 
-async function callGradioWithURL(fileURL) {
+async function callGradioWithBase64Image(base64Data) {
 	const payload = {
-		data: [
-			{
-				path: fileURL,
-				meta: { _type: "gradio.FileData" }
-			}
-		]
+		data: [base64Data] // no 'path', no 'meta', just the base64 data URI
 	};
 
 	const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
@@ -65,13 +52,11 @@ async function handleUpload() {
 
 	if (!file) return;
 
-	output.textContent = "📤 Uploading file...";
+	output.textContent = "🧠 Classifying...";
 
 	try {
-		const url = await uploadToTmpfiles(file);
-		output.textContent = "🧠 Classifying...";
-
-		const result = await callGradioWithURL(url);
+		const base64 = await fileToBase64(file);
+		const result = await callGradioWithBase64Image(base64);
 		output.textContent = "✅ Result:\n" + JSON.stringify(result, null, 2);
 	} catch (err) {
 		console.error(err);

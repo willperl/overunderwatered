@@ -31,6 +31,7 @@ layout: page
 
 			const fileURL = uploadRes.link;
 			output.textContent = `File uploaded: ${fileURL}\nCalling Gradio...`;
+			console.log("Uploaded file URL:", fileURL);
 
 			try {
 				const result = await callGradioAPI(fileURL);

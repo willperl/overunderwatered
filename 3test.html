@@ -3,31 +3,61 @@ title: 3. Tester
 layout: page
 ---
 
-<h2>Upload an image</h2>
-	<input type="file" id="fileInput" />
-	<pre id="output"></pre>
+<input type="file" id="fileInput" />
+	<button onclick="handleUpload()">Classify</button>
+
+	<pre id="output">Waiting...</pre>
 
 	<script>
 		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
 
-		async function fileToDataURL(file) {
-			return await new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onload = () => resolve(reader.result);
-				reader.onerror = reject;
-				reader.readAsDataURL(file);
-			});
+		async function handleUpload() {
+			const fileInput = document.getElementById("fileInput");
+			const output = document.getElementById("output");
+
+			if (!fileInput.files[0]) {
+				output.textContent = "Please select a file.";
+				return;
+			}
+
+			output.textContent = "Uploading to file.io...";
+
+			const uploadRes = await uploadToFileIO(fileInput.files[0]);
+
+			if (!uploadRes.success) {
+				output.textContent = "Upload failed.";
+				return;
+			}
+
+			const fileURL = uploadRes.link;
+			output.textContent = `File uploaded: ${fileURL}\nCalling Gradio...`;
+
+			try {
+				const result = await callGradioAPI(fileURL);
+				output.textContent = `🎉 Result:\n${JSON.stringify(result, null, 2)}`;
+			} catch (err) {
+				output.textContent = `❌ Error: ${err.message}`;
+			}
 		}
 
-		async function uploadAndClassify(file) {
-			const base64 = await fileToDataURL(file);
+		async function uploadToFileIO(file) {
+			const formData = new FormData();
+			formData.append("file", file);
 
+			const res = await fetch("https://file.io/?expires=1d", {
+				method: "POST",
+				body: formData
+			});
+
+			return await res.json();
+		}
+
+		async function callGradioAPI(imageURL) {
 			const payload = {
 				data: [
 					{
-						name: file.name,
-						data: base64,
-						_type: "image"
+						path: imageURL,
+						meta: { _type: "gradio.FileData" }
 					}
 				]
 			};
@@ -39,34 +69,14 @@ layout: page
 			});
 
 			const { event_id } = await res.json();
-			if (!event_id) throw new Error("No event_id returned");
-
 			const stream = await fetch(`${predictURL}/${event_id}`);
 			const raw = await stream.text();
 
-			console.log("🔻 Raw stream:\n", raw);
+			console.log("Raw response:\n", raw);
 
 			const match = raw.match(/^data:\s*(.*)$/m);
-			if (!match) throw new Error("No JSON data in stream");
+			if (!match) throw new Error("No JSON in stream");
 
-			const parsed = JSON.parse(match[1]);
-			return parsed;
+			return JSON.parse(match[1]);
 		}
-
-		document.getElementById("fileInput").addEventListener("change", async (e) => {
-			const file = e.target.files[0];
-			const output = document.getElementById("output");
-
-			if (!file) return;
-
-			output.textContent = "🧠 Classifying...";
-
-			try {
-				const result = await uploadAndClassify(file);
-				output.textContent = "✅ Result:\n" + JSON.stringify(result, null, 2);
-			} catch (err) {
-				console.error(err);
-				output.textContent = "❌ Error: " + err.message;
-			}
-		});
 	</script>

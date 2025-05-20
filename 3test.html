@@ -3,74 +3,70 @@ title: 3. Tester
 layout: page
 ---
 
-<input type="file" id="fileInput" required>
-<button onclick="handleUpload()">Classify</button>
-<pre id="output"></pre>
+<h2>Upload an image</h2>
+	<input type="file" id="fileInput" />
+	<pre id="output"></pre>
 
-<script>
-async function fileToImageDataObject(file) {
-  const base64 = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+	<script>
+		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
 
-  // Note: shape can be omitted or guessed, but including is better
-  // If you want to read image dimensions, you can create an Image element and read it, but optional
+		async function fileToDataURL(file) {
+			return await new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = () => resolve(reader.result);
+				reader.onerror = reject;
+				reader.readAsDataURL(file);
+			});
+		}
 
-  return {
-    name: file.name,
-    data: base64,
-    _type: "image-file"
-  };
-}
+		async function uploadAndClassify(file) {
+			const base64 = await fileToDataURL(file);
 
-async function callGradioWithImageObject(imageDataObject) {
-  const payload = {
-    data: [imageDataObject]
-  };
+			const payload = {
+				data: [
+					{
+						name: file.name,
+						data: base64,
+						_type: "image-file"
+					}
+				]
+			};
 
-  const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
-  const response = await fetch(predictURL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+			const res = await fetch(predictURL, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload)
+			});
 
-  const result = await response.json();
-  const eventId = result.event_id;
-  if (!eventId) throw new Error("No event ID returned");
+			const { event_id } = await res.json();
+			if (!event_id) throw new Error("No event_id returned");
 
-  const streamRes = await fetch(`${predictURL}/${eventId}`);
-  const rawText = await streamRes.text();
+			const stream = await fetch(`${predictURL}/${event_id}`);
+			const raw = await stream.text();
 
-  console.log("📥 Raw response:\n" + rawText);
+			console.log("🔻 Raw stream:\n", raw);
 
-  const match = rawText.match(/^data:\s*(.*)$/m);
-  if (!match || !match[1]) throw new Error("No valid data in response");
+			const match = raw.match(/^data:\s*(.*)$/m);
+			if (!match) throw new Error("No JSON data in stream");
 
-  const parsed = JSON.parse(match[1]);
-  console.log("🎉 Parsed result:", parsed);
-  return parsed;
-}
+			const parsed = JSON.parse(match[1]);
+			return parsed;
+		}
 
-async function handleUpload() {
-  const file = document.getElementById("fileInput").files[0];
-  const output = document.getElementById("output");
+		document.getElementById("fileInput").addEventListener("change", async (e) => {
+			const file = e.target.files[0];
+			const output = document.getElementById("output");
 
-  if (!file) return;
+			if (!file) return;
 
-  output.textContent = "🧠 Classifying...";
+			output.textContent = "🧠 Classifying...";
 
-  try {
-    const imageDataObject = await fileToImageDataObject(file);
-    const result = await callGradioWithImageObject(imageDataObject);
-    output.textContent = "✅ Result:\n" + JSON.stringify(result, null, 2);
-  } catch (err) {
-    console.error(err);
-    output.textContent = "❌ Error: " + err.message;
-  }
-}
-
-</script>
+			try {
+				const result = await uploadAndClassify(file);
+				output.textContent = "✅ Result:\n" + JSON.stringify(result, null, 2);
+			} catch (err) {
+				console.error(err);
+				output.textContent = "❌ Error: " + err.message;
+			}
+		});
+	</script>

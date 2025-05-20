@@ -51,7 +51,7 @@ layout: page
 			const json = await res.json();
 
 			// Their API returns relative URLs like `/abc123`
-			return { success: true, link: `https://tmpfiles.org${json.data.url}` };
+			return { success: true, link: json.data.url };
 		}
 
 

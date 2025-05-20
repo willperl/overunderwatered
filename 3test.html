@@ -29,7 +29,7 @@ layout: page
 				return;
 			}
 
-			const fileURL = uploadRes.link;
+			const fileURL = uploadRes.link.replace("tmpfiles.org/", "tmpfiles.org/dl/");
 			output.textContent = `File uploaded: ${fileURL}\nCalling Gradio...`;
 			console.log("Uploaded file URL:", fileURL);
 

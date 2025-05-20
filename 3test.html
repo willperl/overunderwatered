@@ -8,6 +8,11 @@ layout: page
 
 	<pre id="output">Waiting...</pre>
 
+	<div id="chart-container" style="margin-top: 1rem;">
+	<div id="chart-label" style="font-weight: bold;"></div>
+	<div id="chart-bar" style="background-color: #4CAF50; height: 24px; width: 0;"></div>
+	</div>
+
 	<script>
 		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
 
@@ -35,7 +40,21 @@ layout: page
 
 			try {
 				const result = await callGradioAPI(fileURL);
-				output.textContent = `🎉 Result:\n${JSON.stringify(result, null, 2)}`;
+				const parsed = JSON.parse(result);
+				const top = parsed[0].confidences.sort((a, b) => b.confidence - a.confidence)[0];
+
+				// Update output text (optional)
+				output.innerText = `🎉 Top result: ${top.label} (${(top.confidence * 100).toFixed(1)}%)`;
+
+				// Update chart
+				const labelEl = document.getElementById("chart-label");
+				const barEl = document.getElementById("chart-bar");
+
+				labelEl.innerText = top.label;
+				barEl.style.width = `${top.confidence * 100}%`;
+				barEl.innerText = `${(top.confidence * 100).toFixed(1)}%`;
+
+				// output.textContent = `🎉 Result:\n${JSON.stringify(result, null, 2)}`;
 			} catch (err) {
 				output.textContent = `❌ Error: ${err.message}`;
 			}

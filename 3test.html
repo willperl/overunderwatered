@@ -40,8 +40,7 @@ layout: page
 
 			try {
 				const result = await callGradioAPI(fileURL);
-				const parsed = JSON.parse(result.data);
-				const top = parsed[0].confidences.sort((a, b) => b.confidence - a.confidence)[0];
+				const top = result[0].confidences.sort((a, b) => b.confidence - a.confidence)[0];
 
 				// Update output text (optional)
 				output.innerText = `🎉 Top result: ${top.label} (${(top.confidence * 100).toFixed(1)}%)`;

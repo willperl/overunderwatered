@@ -44,10 +44,6 @@
 
 	<script>
 	async function callGradioWithFile(file) {
-		const formData = new FormData();
-		formData.append("file", file);
-
-		// Convert to base64
 		const base64 = await new Promise((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -55,7 +51,6 @@
 			reader.readAsDataURL(file);
 		});
 
-		// Send to Gradio
 		const payload = {
 			data: [
 				{
@@ -68,23 +63,38 @@
 		};
 
 		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
+
+		// Step 1: Submit prediction request
 		const response = await fetch(predictURL, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload)
 		});
-
 		const { event_id } = await response.json();
 
-		// Get result
-		const eventRes = await fetch(`${predictURL}/${event_id}`);
-		const eventText = await eventRes.text();
+		// Step 2: Poll until response contains data
+		const resultURL = `${predictURL}/${event_id}`;
 
-		const match = eventText.match(/^data:\s*(.*)$/m);
-		if (!match) throw new Error("No data line found");
+		for (let attempt = 0; attempt < 10; attempt++) {
+			const resultRes = await fetch(resultURL);
+			const resultText = await resultRes.text();
 
-		return JSON.parse(match[1]);
+			const match = resultText.match(/^data:\s*(.*)$/m);
+			if (match && match[1]) {
+				try {
+					return JSON.parse(match[1]);
+				} catch (err) {
+					console.warn("Failed to parse data, retrying...");
+				}
+			}
+
+			// Wait 500ms before retrying
+			await new Promise(res => setTimeout(res, 500));
+		}
+
+		throw new Error("No prediction result after multiple attempts");
 	}
+
 
 	document.getElementById("uploadForm").addEventListener("submit", async (e) => {
 		e.preventDefault();

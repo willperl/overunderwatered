@@ -44,13 +44,16 @@ layout: page
 			const formData = new FormData();
 			formData.append("file", file);
 
-			const res = await fetch("https://file.io/?expires=1d", {
+			const res = await fetch("https://tmpfiles.org/api/v1/upload", {
 				method: "POST",
 				body: formData
 			});
+			const json = await res.json();
 
-			return await res.json();
+			// Their API returns relative URLs like `/abc123`
+			return { success: true, link: `https://tmpfiles.org${json.data.url}` };
 		}
+
 
 		async function callGradioAPI(imageURL) {
 			const payload = {

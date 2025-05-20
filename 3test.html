@@ -40,29 +40,31 @@ layout: page
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload)
 		});
-		const { event_id } = await response.json();
 
-		// Step 2: Poll until response contains data
+		const { event_id } = await response.json();
 		const resultURL = `${predictURL}/${event_id}`;
 
-		for (let attempt = 0; attempt < 10; attempt++) {
-			const resultRes = await fetch(resultURL);
-			const resultText = await resultRes.text();
+		// Step 2: Fetch and process streaming response as text
+		const resultRes = await fetch(resultURL);
+		const rawText = await resultRes.text();
 
-			const match = resultText.match(/^data:\s*(.*)$/m);
-			if (match && match[1]) {
+		// Step 3: Extract the JSON from the "data: ..." line
+		const lines = rawText.split("\n");
+		for (const line of lines) {
+			if (line.startsWith("data:")) {
+				const jsonPart = line.slice(5).trim();
 				try {
-					return JSON.parse(match[1]);
+					const parsed = JSON.parse(jsonPart);
+					return parsed;
 				} catch (err) {
-					console.warn("Failed to parse data, retrying...");
+					console.error("JSON parse failed:", err);
+					throw new Error("Failed to parse prediction result.");
 				}
 			}
-
-			// Wait 500ms before retrying
-			await new Promise(res => setTimeout(res, 500));
 		}
 
-		throw new Error("No prediction result after multiple attempts");
+		console.error("No valid 'data:' line found in stream:", rawText);
+		throw new Error("Prediction result not found.");
 	}
 
 

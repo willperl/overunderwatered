@@ -1,9 +1,0 @@
-remote_theme: daviddarnes/alembic@main
-plugins:
-- jekyll-remote-theme
-
-title: Will Perl
-description: Analyze if your unhappy plant is over or under watered with advanced computer vision
-
-author:
-  name: Will Perl

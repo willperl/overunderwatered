@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Indoor Plant Analyzer</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+	<link rel="icon" type="image/png" href="favicon.png">
+	<style>
+		body { font-family: 'Inter', sans-serif; }
+	</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-green-200 flex items-center justify-center">
+
+	<main class="w-full max-w-lg mx-auto bg-white/80 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-green-200">
+		<!-- Title & Blurb -->
+		<h1 class="text-4xl font-extrabold text-green-900 mb-3 text-center">Indoor Plant Analyzer</h1>
+		<p class="text-green-800 mb-8 text-center leading-relaxed">
+			Upload a photo of your indoor plant and get instant care tips, identification, or health analysis. Your green companion deserves the best!
+		</p>
+		
+		<!-- Upload Form -->
+		<form class="w-full flex flex-col gap-4" onsubmit="event.preventDefault(); handleUpload();">
+			<label class="flex flex-col items-center cursor-pointer bg-green-100 hover:bg-green-200 transition rounded-2xl py-7 border-2 border-dashed border-green-300 mb-3">
+				<svg class="w-8 h-8 text-green-600 mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1"></path>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M8 12l4-4 4 4m-4-4v12"></path>
+				</svg>
+				<span class="text-green-800 font-semibold">Tap to upload a plant photo</span>
+				<input id="fileInput" type="file" accept="image/*" class="hidden" required onchange="handleFileSelect(this)">
+			</label>
+
+			<!-- Preview -->
+			<div id="preview" class="flex justify-center mb-2"></div>
+
+			<!-- Analyze Button -->
+			<div class="flex justify-center">
+				<button id="submitBtn" type="submit" class="bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-2 px-7 rounded-xl shadow hover:scale-105 transition active:scale-95 disabled:opacity-60 disabled:pointer-events-none">
+					Analyze
+				</button>
+			</div>
+		</form>
+
+		<!-- Loading Bar -->
+		<div id="loadingBar" class="w-full h-3 bg-green-100 rounded-full mt-8 mb-4 overflow-hidden hidden">
+			<div id="loadingProgress" class="h-full bg-green-500 transition-all duration-700 rounded-full" style="width:0%"></div>
+		</div>
+
+		<!-- Results Box -->
+		<pre id="resultsBox" class="w-full text-center bg-green-50 border border-green-200 rounded-2xl mt-3 p-5 text-green-900 font-mono min-h-[40px] shadow-inner" style="display:none;">Waiting...</pre>
+
+		<!-- Confidence Chart -->
+		<div id="chart-container" class="w-full mt-4 hidden">
+			<div id="chart-label" class="font-bold text-center w-full mb-1"></div>
+			<div class="w-full h-6 bg-green-100 rounded-full overflow-hidden">
+				<div id="chart-bar" class="h-full bg-green-500 text-white text-xs text-center leading-6 rounded-full transition-all duration-700" style="width: 0;"></div>
+			</div>
+		</div>
+	</main>
+
+	<script>
+		const predictURL = "https://smittens-overorunderwatered.hf.space/gradio_api/call/predict";
+
+		let fileSelected = false;
+		const fileInput = document.getElementById('fileInput');
+		const submitBtn = document.getElementById('submitBtn');
+		const preview = document.getElementById('preview');
+		const loadingBar = document.getElementById('loadingBar');
+		const loadingProgress = document.getElementById('loadingProgress');
+		const resultsBox = document.getElementById('resultsBox');
+		const chartContainer = document.getElementById('chart-container');
+		const chartLabel = document.getElementById('chart-label');
+		const chartBar = document.getElementById('chart-bar');
+
+		function handleFileSelect(input) {
+			if (input.files && input.files[0]) {
+				fileSelected = true;
+				submitBtn.disabled = false;
+
+				const reader = new FileReader();
+				reader.onload = e => {
+					preview.innerHTML = `<img src="${e.target.result}" alt="Preview" class="rounded-xl shadow-md border border-green-200 w-24 h-24 object-cover">`;
+				};
+				reader.readAsDataURL(input.files[0]);
+			} else {
+				fileSelected = false;
+				submitBtn.disabled = true;
+				preview.innerHTML = "";
+			}
+		}
+
+		async function handleUpload() {
+			if (!fileSelected) return;
+			
+			resultsBox.style.display = "block";
+			resultsBox.textContent = "Uploading...";
+			chartContainer.classList.add("hidden");
+			loadingBar.classList.remove("hidden");
+			loadingProgress.style.width = "0%";
+			submitBtn.disabled = true;
+
+			startLoadingBar();
+
+			const file = fileInput.files[0];
+			const uploadRes = await uploadToFileIO(file);
+
+			advanceTo20();
+
+			if (!uploadRes.success) {
+				resultsBox.textContent = "Upload failed.";
+				loadingBar.classList.add("hidden");
+				submitBtn.disabled = false;
+				return;
+			}
+
+			const fileURL = uploadRes.link.replace("tmpfiles.org/", "tmpfiles.org/dl/");
+			resultsBox.textContent = `Analyzing...`;
+
+			try {
+				//animateLoadingBar();
+
+
+				const result = await callGradioAPI(fileURL);
+				const top = result[0].confidences.sort((a, b) => b.confidence - a.confidence)[0];
+
+				setTimeout(() => {
+					finishLoadingBar();
+
+					loadingBar.classList.add("hidden");
+					resultsBox.style.display = "none";
+					chartContainer.classList.remove("hidden");
+					chartLabel.textContent = `Result: ` + top.label.replace(" plant","");
+					chartBar.style.width = `${top.confidence * 100}%`;
+					chartBar.textContent = `Confidence: ${(top.confidence * 100).toFixed(1)}%`;
+					submitBtn.disabled = false;
+				}, 500);
+			} catch (err) {
+				resultsBox.textContent = `❌ Error: ${err.message}`;
+				loadingBar.classList.add("hidden");
+				submitBtn.disabled = false;
+			}
+		}
+
+		let progress = 0;
+		let interval = null;
+		const progWaitsAt = 97;
+		var nextProgInterval = 300 + Math.random() * 200;
+
+		function startLoadingBar() {
+			progress = 0;
+			loadingProgress.style.width = '0%';
+
+			// Start random loading from 20% to 90%
+			interval = setInterval(() => {
+				nextProgInterval = 0 + Math.random() * 800;
+				if (progress >= 20 && progress < progWaitsAt) {
+					progress += 14 + Math.floor(Math.random() * 32); // Random small bump
+					if (progress > progWaitsAt) progress = progWaitsAt;
+					loadingProgress.style.width = progress + '%';
+				}
+			}, nextProgInterval);
+		}
+
+		function advanceTo20() {
+			progress = 20;
+			loadingProgress.style.width = '20%';
+		}
+
+		function finishLoadingBar() {
+			clearInterval(interval);
+			progress = 100;
+			loadingProgress.style.width = '100%';
+		}
+
+
+		async function uploadToFileIO(file) {
+			const formData = new FormData();
+			formData.append("file", file);
+
+			const res = await fetch("https://tmpfiles.org/api/v1/upload", {
+				method: "POST",
+				body: formData
+			});
+			const json = await res.json();
+			return { success: true, link: json.data.url };
+		}
+
+		async function callGradioAPI(imageURL) {
+			const payload = {
+				data: [
+					{
+						path: imageURL,
+						meta: { _type: "gradio.FileData" }
+					}
+				]
+			};
+
+			const res = await fetch(predictURL, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload)
+			});
+
+			const { event_id } = await res.json();
+			const stream = await fetch(`${predictURL}/${event_id}`);
+			const raw = await stream.text();
+			const match = raw.match(/^data:\s*(.*)$/m);
+			if (!match) throw new Error("No JSON in stream");
+
+			return JSON.parse(match[1]);
+		}
+
+		submitBtn.disabled = true;
+	</script>
+</body>
+</html>

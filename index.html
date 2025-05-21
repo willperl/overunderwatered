@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Indoor Plant Analyzer</title>
+	<title>Plant Water Analyzer</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -15,9 +15,13 @@
 
 	<main class="w-full max-w-lg mx-auto bg-white/80 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-green-200">
 		<!-- Title & Blurb -->
-		<h1 class="text-4xl font-extrabold text-green-900 mb-3 text-center">Indoor Plant Analyzer</h1>
+		<h1 class="text-4xl font-extrabold text-green-900 mb-3 text-center">Plant Water Analyzer</h1>
 		<p class="text-green-800 mb-8 text-center leading-relaxed">
-			Upload a photo of your indoor plant and get instant care tips, identification, or health analysis. Your green companion deserves the best!
+			Analyze if your unhappy plant is over- or under-watered with advanced computer vision. Your green companion deserves the best!
+			<br>
+			The visual symptoms of over-watering and under-watering a plant are often identical to the human eye. But an AI Image Recognition Model can evaluate at a deeper level and recognize clues that even a loving and experienced plant owner might not be able to see.
+			<br>
+			Upload a photo of your drooping plant and get a instant analysis of its water state.
 		</p>
 		
 		<!-- Upload Form -->
@@ -155,7 +159,7 @@
 			interval = setInterval(() => {
 				nextProgInterval = 0 + Math.random() * 800;
 				if (progress >= 20 && progress < progWaitsAt) {
-					progress += 22 + Math.floor(Math.random() * 42); // Random small bump
+					progress += 16 + Math.floor(Math.random() * 32); // Random small bump
 					if (progress > progWaitsAt) progress = progWaitsAt;
 					loadingProgress.style.width = progress + '%';
 				}
